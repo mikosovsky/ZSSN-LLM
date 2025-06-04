@@ -18,3 +18,6 @@
 - [FAISS](https://github.com/facebookresearch/faiss)
 - [LangChain](https://python.langchain.com/docs/introduction/)
 - [yfinance](https://ranaroussi.github.io/yfinance/)
+
+## Uruchamianie:
+`docker compose up --build`
