@@ -11,26 +11,33 @@ def increment_counter():
     file_button_counter += 1
     return return_value
 
-# Dialog to set API key for OpenRouter
-@st.dialog("Set API Key to OpenRouter")
+# Dialog to set provider, endpoint URL, and API key
+providers = {"OpenRouter":0, "Azure AI Foundry":1}
+models = { "OpenRouter": "deepseek/deepseek-r1-0528:free", "Azure AI Foundry": "DeepSeek-R1-0528" }
+@st.dialog("Set config for LLM")
 def set_api_key():
-    st.markdown("Please enter your [OpenRouter](https://openrouter.ai) API key to continue.")
+    st.markdown("Please select provider and model additionally please set your endpoint URL and API Key.")
+    provider = st.selectbox("Select Provider", ["OpenRouter", "Azure AI Foundry"], index=providers.get(st.session_state.get("provider", "OpenRouter"), 0))
+    endpoint_url = st.text_input("Endpoint URL", value=st.session_state.ENDPOINT_URL, placeholder="Enter endpoint URL")
     api_key = st.text_input("API Key", value=st.session_state.API_KEY, placeholder="Enter API key", type="password")
     if st.button("Submit"):
-        if api_key:
+        if api_key and endpoint_url:
             st.session_state.API_KEY = api_key
-            st.success("API Key set successfully!")
+            st.session_state.ENDPOINT_URL = endpoint_url
+            st.session_state.model = models.get(provider)
+            st.session_state.provider = provider
+            st.success("Config set successfully!")
             sleep(1)
             st.rerun()
         else:
-            st.error("Please enter a valid API Key.")
+            st.error("Please enter a valid config.")
 
 st.title("Investing in the Future: A Deep Dive into the Stock Market")
 
 
 # Sidebar configuration
 with st.sidebar:
-    st.button("Change API key", on_click=set_api_key)
+    st.button("Change LLM config", on_click=set_api_key)
     st.header("📊 Stock Market Analysis")
     st.write("Explore the latest trends and insights in the stock market.")
     st.write("Use the sidebar to navigate through different sections.")
@@ -40,8 +47,11 @@ if "messages" not in st.session_state:
     st.session_state.setdefault("messages", [])
 
 # Check if API key is set, if not prompt user to set it
-if "API_KEY" not in st.session_state:
+if "API_KEY" not in st.session_state or "ENDPOINT_URL" not in st.session_state or "model" not in st.session_state or "provider" not in st.session_state:
     st.session_state.API_KEY = ""
+    st.session_state.ENDPOINT_URL = ""
+    st.session_state.model = ""
+    st.session_state.provider = ""
     set_api_key()
 
 # Display chat messages
