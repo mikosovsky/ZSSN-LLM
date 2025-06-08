@@ -46,10 +46,8 @@ if prompt := st.chat_input("Start a conversation",
             files_dict = [{"name": file.name, "data": file} for file in prompt.files]
         st.session_state.messages.append({"role": "user", "content": req_prompt, "files": files_dict})
         
-
     # Simulate a response from a model (placeholder)
     with st.chat_message("assistant"):
         ans = "This is a placeholder response. Replace with actual model response."
         st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})
         st.markdown(ans)
-        
