@@ -7,7 +7,7 @@
 - [yfinance](https://ranaroussi.github.io/yfinance/)
 
 # TODO
-- [ ] Baza wektorowa z dodawanych 
+- [ ] Baza wektorowa z dodawanych plików
 - [ ] Prompt template
 - [ ] MCP serwer
 - [ ] funkcja MCP dla yfinance
