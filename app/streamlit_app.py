@@ -1,19 +1,36 @@
 import streamlit as st
 import pandas as pd
+from time import sleep
 
+# Function to increment the file button counter
+# This is used to ensure unique keys for each file download button
 file_button_counter = 0
-
 def increment_counter():
     global file_button_counter
     return_value = file_button_counter
     file_button_counter += 1
     return return_value
 
+# Dialog to set API key for OpenRouter
+@st.dialog("Set API Key to OpenRouter")
+def set_api_key():
+    st.markdown("Please enter your [OpenRouter](https://openrouter.ai) API key to continue.")
+    api_key = st.text_input("API Key", value=st.session_state.API_KEY, placeholder="Enter API key", type="password")
+    if st.button("Submit"):
+        if api_key:
+            st.session_state.API_KEY = api_key
+            st.success("API Key set successfully!")
+            sleep(1)
+            st.rerun()
+        else:
+            st.error("Please enter a valid API Key.")
+
 st.title("Investing in the Future: A Deep Dive into the Stock Market")
 
 
 # Sidebar configuration
 with st.sidebar:
+    st.button("Change API key", on_click=set_api_key)
     st.header("📊 Stock Market Analysis")
     st.write("Explore the latest trends and insights in the stock market.")
     st.write("Use the sidebar to navigate through different sections.")
@@ -21,6 +38,11 @@ with st.sidebar:
 # Initialize session state for messages if not already present
 if "messages" not in st.session_state:
     st.session_state.setdefault("messages", [])
+
+# Check if API key is set, if not prompt user to set it
+if "API_KEY" not in st.session_state:
+    st.session_state.API_KEY = ""
+    set_api_key()
 
 # Display chat messages
 for message in st.session_state.messages:
