@@ -16,5 +16,17 @@
 - [ ] dodanie cache'a
 - [ ] historia chatów - baza SQLite (logowanie?)
 - [ ] UI - chat + sidebar
+
+# Workflow:
+1. Użytkownik wpisuje prompt i dodaje plik
+2. Pliki są czytane
+3. Tworzone na ich bazie embeddingi
+4. Wrzucane są do bazy wektorowej
+5. Następnie baza wektorowa jest przeszukiwana na bazie wiadomości w prompt'cie
+6. Budowany jest prompt: cały context rozmowy + znaleziona treść w dokumentach
+7. wysyłany jest request i oczekuje na odpowiedź
+8. Model ma możliwość odpytania serwera MCP o dodatkowe zasoby
+
+
 ## Uruchamianie:
 `docker compose up --build`
