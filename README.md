@@ -16,3 +16,5 @@
 - [ ] dodanie cache'a
 - [ ] historia chatów - baza SQLite (logowanie?)
 - [ ] UI - chat + sidebar
+## Uruchamianie:
+`docker compose up --build`
