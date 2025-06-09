@@ -13,7 +13,7 @@ def increment_counter():
 
 # Dialog to set provider, endpoint URL, and API key
 providers = {"OpenRouter":0, "Azure AI Foundry":1}
-models = { "OpenRouter": "deepseek/deepseek-r1-0528:free", "Azure AI Foundry": "DeepSeek-R1-0528" }
+models = { "OpenRouter": "deepseek/deepseek-r1-0528:free", "Azure AI Foundry": "DeepSeek-V3-0324" }
 @st.dialog("Set config for LLM")
 def set_api_key():
     st.markdown("Please select provider and model additionally please set your endpoint URL and API Key.")
