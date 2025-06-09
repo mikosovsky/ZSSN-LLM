@@ -44,7 +44,7 @@ with st.sidebar:
 
 # Initialize session state for messages if not already present
 if "messages" not in st.session_state:
-    st.session_state.setdefault("messages", [])
+    st.session_state.messages = []
 
 # Check if API key, endpoint url, model and provider are set, if not prompt user to set it
 if "API_KEY" not in st.session_state or "ENDPOINT_URL" not in st.session_state or "model" not in st.session_state or "provider" not in st.session_state:
