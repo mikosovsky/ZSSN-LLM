@@ -7,6 +7,7 @@ services:
       - "8501:8501"
     volumes:
       - .:/app
+      - ./data:/app/data  # Add persistent volume for database
     environment:
       - STREAMLIT_SERVER_PORT=8501
       - STREAMLIT_SERVER_HEADLESS=true
