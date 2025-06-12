@@ -20,33 +20,9 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
-# Add login UI
-name, authentication_status, username = authenticator.login()
 
-if authentication_status:
-    authenticator.logout('Logout', 'sidebar')
-    st.write(f'Welcome *{name}*')
-    
-    # Your existing app code here...
-    # Make sure to update the chat history when messages are exchanged
-    
-    # After processing chat messages, save to database
-    if "messages" in st.session_state and st.session_state.messages:
-        db.save_chat_history(username, st.session_state.messages)
-    
-    # Add chat history section in sidebar
-    with st.sidebar:
-        st.header("Chat History")
-        history = db.get_chat_history(username)
-        for msgs, timestamp in history:
-            if st.button(f"Chat from {timestamp}"):
-                st.session_state.messages = msgs
-                st.rerun()
 
-elif authentication_status == False:
-    st.error('Username/password is incorrect')
-elif authentication_status == None:
-    st.warning('Please enter your username and password')
+
 
 # Function to increment the file button counter
 # This is used to ensure unique keys for each file download button
@@ -80,17 +56,32 @@ def set_api_key():
 
 st.title("Investing in the Future: A Deep Dive into the Stock Market")
 
-
-# Sidebar configuration
-with st.sidebar:
-    st.button("Change LLM config", on_click=set_api_key)
-    st.header("📊 Stock Market Analysis")
-    st.write("Explore the latest trends and insights in the stock market.")
-    st.write("Use the sidebar to navigate through different sections.")
-
 # Initialize session state for messages if not already present
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+with st.sidebar:
+    if not st.session_state.authentication_status:
+        st.title("Authentication")
+        st.write("Please log in to access chats history.")
+        try:
+            authenticator.login()
+        except Exception as e:
+            st.error(e)
+    else:
+        st.write(f'Welcome *{st.session_state.get("name")}*')
+        authenticator.logout()
+
+        st.header("💬 Chat History")
+        history = db.get_chat_history(st.session_state["username"])
+        for msgs, timestamp in history:
+            if st.button(f"Chat from {timestamp}"):
+                st.session_state.messages = msgs
+                st.rerun()
+    
+    st.button("Change LLM config", on_click=set_api_key)
+
+
 
 # Check if API key, endpoint url, model and provider are set, if not prompt user to set it
 if "API_KEY" not in st.session_state or "ENDPOINT_URL" not in st.session_state or "model" not in st.session_state or "provider" not in st.session_state:
@@ -129,3 +120,6 @@ if prompt := st.chat_input("Start a conversation",
         ans = "This is a placeholder response. Replace with actual model response."
         st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})
         st.markdown(ans)
+    
+    if st.session_state.authentication_status:
+        db.save_chat_history(st.session_state["username"], st.session_state.messages)
