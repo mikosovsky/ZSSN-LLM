@@ -1,28 +1,6 @@
 import streamlit as st
-import streamlit_authenticator as stauth
-import yaml
-from yaml import SafeLoader
-from Infrastructure import Database
 import pandas as pd
 from time import sleep
-
-db = Database()
-
-# Load configuration file
-with open('/app/app/Infrastructure/users.config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
-
-# Create an authentication object
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days']
-)
-
-
-
-
 
 # Function to increment the file button counter
 # This is used to ensure unique keys for each file download button
@@ -56,32 +34,17 @@ def set_api_key():
 
 st.title("Investing in the Future: A Deep Dive into the Stock Market")
 
+
+# Sidebar configuration
+with st.sidebar:
+    st.button("Change LLM config", on_click=set_api_key)
+    st.header("📊 Stock Market Analysis")
+    st.write("Explore the latest trends and insights in the stock market.")
+    st.write("Use the sidebar to navigate through different sections.")
+
 # Initialize session state for messages if not already present
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-with st.sidebar:
-    if not st.session_state.authentication_status:
-        st.title("Authentication")
-        st.write("Please log in to access chats history.")
-        try:
-            authenticator.login()
-        except Exception as e:
-            st.error(e)
-    else:
-        st.write(f'Welcome *{st.session_state.get("name")}*')
-        authenticator.logout()
-
-        st.header("💬 Chat History")
-        history = db.get_chat_history(st.session_state["username"])
-        for msgs, timestamp in history:
-            if st.button(f"Chat from {timestamp}"):
-                st.session_state.messages = msgs
-                st.rerun()
-    
-    st.button("Change LLM config", on_click=set_api_key)
-
-
 
 # Check if API key, endpoint url, model and provider are set, if not prompt user to set it
 if "API_KEY" not in st.session_state or "ENDPOINT_URL" not in st.session_state or "model" not in st.session_state or "provider" not in st.session_state:
@@ -120,6 +83,3 @@ if prompt := st.chat_input("Start a conversation",
         ans = "This is a placeholder response. Replace with actual model response."
         st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})
         st.markdown(ans)
-    
-    if st.session_state.authentication_status:
-        db.save_chat_history(st.session_state["username"], st.session_state.messages)
