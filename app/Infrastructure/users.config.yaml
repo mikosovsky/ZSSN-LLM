@@ -1,0 +1,10 @@
+credentials:
+  usernames:
+    test:
+      email: test@gmail.com
+      name: Test One
+      password: abc123 # This should be hashed in production
+cookie:
+  expiry_days: 30
+  key: "some_signature_key"
+  name: "stock_market_app_cookie"

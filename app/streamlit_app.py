@@ -1,6 +1,52 @@
 import streamlit as st
+import streamlit_authenticator as stauth
+import yaml
+from yaml import SafeLoader
+from Infrastructure import Database
 import pandas as pd
 from time import sleep
+
+db = Database()
+
+# Load configuration file
+with open('/app/app/Infrastructure/users.config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+# Create an authentication object
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days']
+)
+
+# Add login UI
+name, authentication_status, username = authenticator.login()
+
+if authentication_status:
+    authenticator.logout('Logout', 'sidebar')
+    st.write(f'Welcome *{name}*')
+    
+    # Your existing app code here...
+    # Make sure to update the chat history when messages are exchanged
+    
+    # After processing chat messages, save to database
+    if "messages" in st.session_state and st.session_state.messages:
+        db.save_chat_history(username, st.session_state.messages)
+    
+    # Add chat history section in sidebar
+    with st.sidebar:
+        st.header("Chat History")
+        history = db.get_chat_history(username)
+        for msgs, timestamp in history:
+            if st.button(f"Chat from {timestamp}"):
+                st.session_state.messages = msgs
+                st.rerun()
+
+elif authentication_status == False:
+    st.error('Username/password is incorrect')
+elif authentication_status == None:
+    st.warning('Please enter your username and password')
 
 # Function to increment the file button counter
 # This is used to ensure unique keys for each file download button
