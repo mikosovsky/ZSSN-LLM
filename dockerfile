@@ -17,6 +17,8 @@ RUN pip3 install -r app/requirements.txt
 
 EXPOSE 8501
 
+RUN mkdir -p /app/data
+
 ENV STREAMLIT_SERVER_PORT=8501 \
     STREAMLIT_SERVER_ENABLE_CORS=false \
     STREAMLIT_SERVER_HEADLESS=true

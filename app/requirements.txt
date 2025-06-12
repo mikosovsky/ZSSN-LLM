@@ -4,3 +4,6 @@ streamlit
 langchain-core
 langchain-azure-ai
 azure-ai-inference
+streamlit-authenticator
+pyyaml
+bcrypt
