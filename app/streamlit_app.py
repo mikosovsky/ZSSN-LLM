@@ -1,15 +1,30 @@
 import streamlit as st
 import pandas as pd
 from time import sleep
+import fitz
+from langchain.docstore.document import Document
+from agent import VectorStore
 
 # Function to increment the file button counter
 # This is used to ensure unique keys for each file download button
 file_button_counter = 0
+documents = []
+db = VectorStore()
 def increment_counter():
     global file_button_counter
     return_value = file_button_counter
     file_button_counter += 1
     return return_value
+
+def file_to_doc(file):
+    if file.name.endswith('.pdf'):
+        global documents
+        file_bytes = file.read()
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return Document(page_content=text, metadata={"source": file.name})
 
 # Dialog to set provider, endpoint URL, and API key
 providers = {"OpenRouter":0, "Azure AI Foundry":1}
@@ -59,7 +74,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
         if message["files"]:
-            files = [st.download_button(label=file["name"], data=file["data"], file_name=file["name"], icon="📄", key=f"file_btn_{increment_counter()}") for file in message["files"]]
+            files_btns = [st.download_button(label=file["name"], data=file["data"], file_name=file["name"], icon="📄", key=f"file_btn_{increment_counter()}") for file in message["files"]]
 
 # Chat input for user interaction
 if prompt := st.chat_input("Start a conversation",
@@ -68,18 +83,26 @@ if prompt := st.chat_input("Start a conversation",
     # Store user input in session state
     with st.chat_message("user"):
         req_prompt = ""
-        files = []
+        files_btns = []
         files_dict = []
         if prompt.text:
             req_prompt = prompt["text"]
             st.markdown(req_prompt)
         if prompt.files:
-            files = [st.download_button(label=file.name, data=file, file_name=file.name, icon="📄", key=f"file_btn_{increment_counter()}") for file in prompt.files]
+            files_btns = [st.download_button(label=file.name, data=file, file_name=file.name, icon="📄", key=f"file_btn_{increment_counter()}") for file in prompt.files]
             files_dict = [{"name": file.name, "data": file} for file in prompt.files]
+            docs = [file_to_doc(file) for file in prompt.files]
+            db.add_documents(docs)
         st.session_state.messages.append({"role": "user", "content": req_prompt, "files": files_dict})
+
         
     # Simulate a response from a model (placeholder)
     with st.chat_message("assistant"):
-        ans = "This is a placeholder response. Replace with actual model response."
+        print(req_prompt)
+        ans = db.search(req_prompt, k=5)
+        if not ans:
+            ans = "No relevant information found in the provided documents."
+        else:
+            ans = "\n".join([doc.page_content for doc in ans])
         st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})
         st.markdown(ans)

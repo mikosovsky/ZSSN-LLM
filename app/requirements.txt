@@ -8,3 +8,9 @@ langchain
 streamlit-authenticator
 pyyaml
 bcrypt
+faiss-cpu
+tiktoken
+pymupdf
+langchain-community
+sentence-transformers
+numpy<2
