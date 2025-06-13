@@ -9,7 +9,7 @@ from agent import VectorStore
 # This is used to ensure unique keys for each file download button
 file_button_counter = 0
 documents = []
-db = VectorStore()
+
 def increment_counter():
     global file_button_counter
     return_value = file_button_counter
@@ -69,6 +69,10 @@ if "API_KEY" not in st.session_state or "ENDPOINT_URL" not in st.session_state o
     st.session_state.provider = ""
     set_api_key()
 
+# Initiaize the VectorStore if not already done
+if "db" not in st.session_state:
+    st.session_state.db = VectorStore()
+
 # Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -92,14 +96,13 @@ if prompt := st.chat_input("Start a conversation",
             files_btns = [st.download_button(label=file.name, data=file, file_name=file.name, icon="📄", key=f"file_btn_{increment_counter()}") for file in prompt.files]
             files_dict = [{"name": file.name, "data": file} for file in prompt.files]
             docs = [file_to_doc(file) for file in prompt.files]
-            db.add_documents(docs)
+            st.session_state.db.add_documents(docs)
         st.session_state.messages.append({"role": "user", "content": req_prompt, "files": files_dict})
 
         
     # Simulate a response from a model (placeholder)
     with st.chat_message("assistant"):
-        print(req_prompt)
-        ans = db.search(req_prompt, k=5)
+        ans = st.session_state.db.search(req_prompt, k=5)
         if not ans:
             ans = "No relevant information found in the provided documents."
         else:
