@@ -7,15 +7,15 @@
 - [yfinance](https://ranaroussi.github.io/yfinance/)
 
 # TODO
-- [ ] Baza wektorowa z dodawanych plików
-- [ ] Prompt template
-- [ ] MCP serwer
-- [ ] funkcja MCP dla yfinance
+- [x] Baza wektorowa z dodawanych plików
+- [x] Prompt template
+- [x] MCP serwer
+- [x] funkcja MCP dla yfinance
 - [ ] funkcja MCP dla plotly
 - [ ] funkcja MCP dla generowania raportów pdf
 - [ ] dodanie cache'a
 - [ ] historia chatów - baza SQLite (logowanie?)
-- [ ] UI - chat + sidebar
+- [x] UI - chat + sidebar
 
 # Workflow:
 1. Użytkownik wpisuje prompt i dodaje plik
