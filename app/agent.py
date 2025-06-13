@@ -14,7 +14,7 @@ class Agent:
     def __init__(self, provider, endpoint_url, api_key, model):
         self.set_connection_config(provider, endpoint_url, api_key, model)
         self.prompt_template = self._init_prompt_template()
-        self.db = VectorStore()
+        self.vectorstore = VectorStore()
 
     def _initialize_chat_model(self):
         if self.provider == "Azure AI Foundry":
@@ -70,6 +70,11 @@ Answer:
             return True, response.content
         except Exception as e:
             return False, str(e)
+        
+    def add_documents(self, documents):
+        if not isinstance(documents, list):
+            raise ValueError("Documents should be a list of Document objects.")
+        self.vectorstore.add_documents(documents)
 
 class VectorStore:
     def __init__(self):

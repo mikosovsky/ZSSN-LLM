@@ -70,8 +70,8 @@ if "API_KEY" not in st.session_state or "ENDPOINT_URL" not in st.session_state o
     set_api_key()
 
 # Initiaize the VectorStore if not already done
-if "db" not in st.session_state:
-    st.session_state.db = VectorStore()
+if "vectorstore" not in st.session_state:
+    st.session_state.vectorstore = VectorStore()
 
 # Display chat messages
 for message in st.session_state.messages:
@@ -96,13 +96,13 @@ if prompt := st.chat_input("Start a conversation",
             files_btns = [st.download_button(label=file.name, data=file, file_name=file.name, icon="📄", key=f"file_btn_{increment_counter()}") for file in prompt.files]
             files_dict = [{"name": file.name, "data": file} for file in prompt.files]
             docs = [file_to_doc(file) for file in prompt.files]
-            st.session_state.db.add_documents(docs)
+            st.session_state.vectorstore.add_documents(docs)
         st.session_state.messages.append({"role": "user", "content": req_prompt, "files": files_dict})
 
         
     # Simulate a response from a model (placeholder)
     with st.chat_message("assistant"):
-        ans = st.session_state.db.search(req_prompt, k=5)
+        ans = st.session_state.vectorstore.search(req_prompt, k=5)
         if not ans:
             ans = "No relevant information found in the provided documents."
         else:

@@ -14,3 +14,5 @@ pymupdf
 langchain-community
 sentence-transformers
 numpy<2
+yfinance
+langchain-mcp-adapters
