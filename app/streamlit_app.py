@@ -4,6 +4,7 @@ import yaml
 from yaml import SafeLoader
 from Infrastructure import Database
 import pandas as pd
+import io
 from time import sleep
 
 db = Database()
@@ -76,6 +77,12 @@ with st.sidebar:
         history = db.get_chat_history(st.session_state["username"])
         for msgs, timestamp in history:
             if st.button(f"Chat from {timestamp}"):
+                # Convert binary file data back to streamlit-compatible format
+                for msg in msgs:
+                    if msg.get("files"):
+                        for file in msg["files"]:
+                            if isinstance(file["data"], bytes):
+                                file["data"] = io.BytesIO(file["data"])
                 st.session_state.messages = msgs
                 st.rerun()
     
@@ -107,9 +114,11 @@ if prompt := st.chat_input("Start a conversation",
         req_prompt = ""
         files = []
         files_dict = []
+
         if prompt.text:
             req_prompt = prompt["text"]
             st.markdown(req_prompt)
+
         if prompt.files:
             files = [st.download_button(label=file.name, data=file, file_name=file.name, icon="📄", key=f"file_btn_{increment_counter()}") for file in prompt.files]
             files_dict = [{"name": file.name, "data": file} for file in prompt.files]
