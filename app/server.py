@@ -62,6 +62,7 @@ def get_stock_history(ticker: str, period: str = "1mo") -> dict:
     history = stock.history(period=period)
     return history.to_dict(orient="records")
 
+# work
 @mcp.tool()
 def get_stock_dividends(ticker: str) -> dict:
     """
@@ -76,7 +77,7 @@ def get_stock_dividends(ticker: str) -> dict:
     stock = yf.Ticker(ticker)
     dividends = stock.dividends
     return dividends.to_dict()
-
+# work
 @mcp.tool()
 def get_stock_splits(ticker: str) -> dict:
     """
@@ -92,6 +93,7 @@ def get_stock_splits(ticker: str) -> dict:
     splits = stock.splits
     return splits.to_dict()
 
+# work
 @mcp.tool()
 def get_stock_recommendations(ticker: str) -> dict:
     """
@@ -107,21 +109,7 @@ def get_stock_recommendations(ticker: str) -> dict:
     recommendations = stock.recommendations
     return recommendations.to_dict(orient="records")
 
-@mcp.tool()
-def get_stock_analysis(ticker: str) -> dict:
-    """
-    Get stock analysis for a given ticker symbol.
-    
-    Args:
-        ticker (str): The stock ticker symbol (e.g., 'AAPL' for Apple Inc.).
-    
-    Returns:
-        dict: A dictionary containing stock analysis.
-    """
-    stock = yf.Ticker(ticker)
-    analysis = stock.analysis
-    return analysis.to_dict(orient="records")
-
+#work
 @mcp.tool()
 def get_stock_calendar(ticker: str) -> dict:
     """
@@ -135,22 +123,22 @@ def get_stock_calendar(ticker: str) -> dict:
     """
     stock = yf.Ticker(ticker)
     calendar = stock.calendar
-    return calendar.to_dict()
+    return calendar
 
-@mcp.tool()
-def get_stock_news(ticker: str) -> list:
-    """
-    Get the latest news articles for a given stock ticker.
+# @mcp.tool()
+# def get_stock_news(ticker: str) -> list:
+#     """
+#     Get the latest news articles for a given stock ticker.
     
-    Args:
-        ticker (str): The stock ticker symbol (e.g., 'AAPL' for Apple Inc.).
+#     Args:
+#         ticker (str): The stock ticker symbol (e.g., 'AAPL' for Apple Inc.).
     
-    Returns:
-        list: A list of dictionaries containing news articles.
-    """
-    stock = yf.Ticker(ticker)
-    news = stock.news
-    return [{"title": article['content']["title"], "link": article['content']['canonicalUrl']["url"], "provider": article['content']["provider"], "published_at": article['content']["providerPublishTime"]} for article in news]
+#     Returns:
+#         list: A list of dictionaries containing news articles.
+#     """
+#     stock = yf.Ticker(ticker)
+#     news = stock.news
+#     return [{"title": article['content']["title"], "link": article['content']['canonicalUrl']["url"], "provider": article['content']["provider"], "published_at": article['content']["providerPublishTime"]} for article in news]
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
