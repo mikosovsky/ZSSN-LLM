@@ -1,11 +1,23 @@
 from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 from azure.core.credentials import AzureKeyCredential
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain.prompts import PromptTemplate
+from langchain.prompts import PromptTemplate, ChatPromptTemplate, MessagesPlaceholder
+from langchain.prompts.chat import SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.memory import ConversationBufferMemory
 from langchain.vectorstores import FAISS
 from langchain.docstore.document import Document
 from langchain.text_splitter import CharacterTextSplitter
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+from langchain_mcp_adapters.tools import load_mcp_tools
+from langchain.agents import AgentExecutor
+from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_tool_calling_agent
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+import asyncio
 
 PROVIDERS = {"OpenRouter":0, "Azure AI Foundry":1}
 MODELS = { "OpenRouter": "deepseek/deepseek-r1-0528:free", "Azure AI Foundry": "DeepSeek-R1-0528" }
@@ -15,7 +27,10 @@ class Agent:
         self.set_connection_config(provider, endpoint_url, api_key, model)
         self.prompt_template = self._init_prompt_template()
         self.vectorstore = VectorStore()
+        self.server_params = self._init_server_params()
+        self.memory = {}
 
+    # Initializes the chat model based on the provider.
     def _initialize_chat_model(self):
         if self.provider == "Azure AI Foundry":
             return AzureAIChatCompletionsModel(
@@ -26,6 +41,7 @@ class Agent:
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
         
+    # Sets the connection configuration for the agent.
     def set_connection_config(self, provider, endpoint_url, api_key, model):
         self.provider = provider
         self.endpoint_url = endpoint_url
@@ -33,28 +49,63 @@ class Agent:
         self.model = model
         self.chat_model = self._initialize_chat_model()
         
+    # Initializes the prompt template for the agent.
     def _init_prompt_template(self):
-        prompt_template = PromptTemplate(
-            input_variables=["context", "question"],
-            template="""
-You are a financial advisor. Use the following context to answer the question.
-Context:
-{context}
+        prompt_template = ChatPromptTemplate.from_messages([
+            SystemMessagePromptTemplate.from_template(
+                "You are a financial advisor who always thinks step by step, then uses tools if needed, until reaching a final answer.\n\n"
+                "You can use the following context to help you:\n{context}\n\n"
+                "(repeat Thought/Action/Action Input/Observation if needed)\n"
+                "Final Answer: the final answer to the original question"
+                ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            HumanMessagePromptTemplate.from_template("{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad")
+            ])
 
-Question:
-{question}
-
-Answer:
-"""
-        )
         return prompt_template
-    
-    def _prepare_prompt(self, context, question):
-        return self.prompt_template.format(context=context, question=question)
-    
-    def _build_vectorstore(self):
-        pass
+
+    # Initializes the server parameters for the MCP server.
+    def _init_server_params(self):
+        return StdioServerParameters(
+            command="python",
+            args=["app/server.py"]
+        )
         
+    # Runs the agent with the given prompt.
+    async def ainvoke(self, prompt):
+        context = self._get_context(prompt)
+        context = ', '.join(context)
+        async with stdio_client(self.server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                tools = await load_mcp_tools(session)
+                print(f"Tools loaded: {tools}")
+                print(self.prompt_template.messages)
+
+                agent = create_tool_calling_agent(self.chat_model, tools, self.prompt_template)
+
+                executor = AgentExecutor(
+                    agent=agent,
+                    tools=tools,
+                    verbose=True
+                )
+                agent_with_memory = RunnableWithMessageHistory(
+                    executor,
+                    self._get_session_history,
+                    input_messages_key="input",
+                    history_messages_key="chat_history"
+                )
+                print(f"context type: {type(context)}")
+                print(f"input type: {type(prompt)}")
+                response = await agent_with_memory.ainvoke({
+                    "context": context,
+                    "input": prompt
+                },
+                config={"configurable": {"session_id": "<foo>"}}
+                )
+                return response
+
     def test_connection(self):
         try:
             # Attempt to get a response from the model
@@ -71,10 +122,18 @@ Answer:
         except Exception as e:
             return False, str(e)
         
-    def add_documents(self, documents):
-        if not isinstance(documents, list):
-            raise ValueError("Documents should be a list of Document objects.")
+    def _get_session_history(self, session_id):
+        if session_id not in self.memory:
+            self.memory[session_id] = ChatMessageHistory()
+        return self.memory[session_id]
+        
+    # Adds documents to the vector store.
+    def _add_documents(self, documents):
         self.vectorstore.add_documents(documents)
+
+    # Searches the vector store with a given prompt.
+    def _get_context(self, prompt, k=5):
+        return self.vectorstore.search(prompt, k=k)
 
 class VectorStore:
     def __init__(self):

@@ -3,6 +3,7 @@ import yfinance as yf
 
 mcp = FastMCP("Finance")
 
+# work
 @mcp.tool()
 def get_stock_price(ticker: str) -> float:
     """
@@ -17,6 +18,7 @@ def get_stock_price(ticker: str) -> float:
     stock = yf.Ticker(ticker)
     return stock.history(period="1d")["Close"].iloc[-1]
 
+# work
 @mcp.tool()
 def get_stock_info(ticker: str) -> dict:
     """
@@ -43,6 +45,7 @@ def get_stock_info(ticker: str) -> dict:
         "low": info.get("dayLow")
     }
 
+# work
 @mcp.tool()
 def get_stock_history(ticker: str, period: str = "1mo") -> dict:
     """
@@ -147,7 +150,7 @@ def get_stock_news(ticker: str) -> list:
     """
     stock = yf.Ticker(ticker)
     news = stock.news
-    return [{"title": article["title"], "link": article["link"], "provider": article["provider"], "published_at": article["providerPublishTime"]} for article in news]
+    return [{"title": article['content']["title"], "link": article['content']['canonicalUrl']["url"], "provider": article['content']["provider"], "published_at": article['content']["providerPublishTime"]} for article in news]
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio", debug=True)
+    mcp.run(transport="stdio")
