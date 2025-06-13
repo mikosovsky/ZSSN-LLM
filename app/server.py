@@ -125,20 +125,20 @@ def get_stock_calendar(ticker: str) -> dict:
     calendar = stock.calendar
     return calendar
 
-# @mcp.tool()
-# def get_stock_news(ticker: str) -> list:
-#     """
-#     Get the latest news articles for a given stock ticker.
+@mcp.tool()
+def get_stock_news(ticker: str) -> list:
+    """
+    Get the latest news articles for a given stock ticker.
     
-#     Args:
-#         ticker (str): The stock ticker symbol (e.g., 'AAPL' for Apple Inc.).
+    Args:
+        ticker (str): The stock ticker symbol (e.g., 'AAPL' for Apple Inc.).
     
-#     Returns:
-#         list: A list of dictionaries containing news articles.
-#     """
-#     stock = yf.Ticker(ticker)
-#     news = stock.news
-#     return [{"title": article['content']["title"], "link": article['content']['canonicalUrl']["url"], "provider": article['content']["provider"], "published_at": article['content']["providerPublishTime"]} for article in news]
+    Returns:
+        list: A list of dictionaries containing news articles.
+    """
+    stock = yf.Ticker(ticker)
+    news = stock.news
+    return news
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
