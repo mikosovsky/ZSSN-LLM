@@ -29,12 +29,12 @@ def file_to_doc(file):
         return Document(page_content=text, metadata={"source": file.name})
 
 # Dialog to set provider, endpoint URL, and API key
-providers = {"OpenRouter":0, "Azure AI Foundry":1}
+providers = {"Azure AI Foundry":1}
 models = { "OpenRouter": "deepseek/deepseek-r1-0528:free", "Azure AI Foundry": "DeepSeek-V3-0324" }
 @st.dialog("Set config for LLM")
 def set_api_key():
     st.markdown("Please select provider and model additionally please set your endpoint URL and API Key.")
-    provider = st.selectbox("Select Provider", ["OpenRouter", "Azure AI Foundry"], index=providers.get(st.session_state.get("provider", "OpenRouter"), 0))
+    provider = st.selectbox("Select Provider", ["Azure AI Foundry"], index=providers.get(st.session_state.get("provider", "Azure AI Foundry"), 0))
     endpoint_url = st.text_input("Endpoint URL", value=st.session_state.ENDPOINT_URL, placeholder="Enter endpoint URL")
     api_key = st.text_input("API Key", value=st.session_state.API_KEY, placeholder="Enter API key", type="password")
     if st.button("Submit"):

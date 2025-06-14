@@ -29,6 +29,7 @@ class Agent:
         self.vectorstore = VectorStore()
         self.server_params = self._init_server_params()
         self.memory = {}
+        self.vectorstore.load("resources/vectorstore")
 
     # Initializes the chat model based on the provider.
     def _initialize_chat_model(self):
@@ -54,6 +55,7 @@ class Agent:
         prompt_template = ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(
                 "You are a financial advisor."
+                "Use context provided to answer the question. Context: \n{context}"
                 ),
             MessagesPlaceholder(variable_name="chat_history"),
             HumanMessagePromptTemplate.from_template("{input}")
@@ -70,7 +72,7 @@ class Agent:
     
     def invoke(self, prompt):
         context = self._get_context(prompt)
-        context = ', '.join(context)
+        context = ', '.join([doc.page_content for doc in context])
         chain = self.prompt_template | self.chat_model
         chain_with_history = RunnableWithMessageHistory(
             chain,
@@ -84,7 +86,6 @@ class Agent:
         },
         config={"configurable": {"session_id": "<foo>"}}
         )
-        print(response)
         return response.content
         
         
@@ -198,3 +199,9 @@ class VectorStore:
     def search(self, prompt, k=5):
         results = self.db.similarity_search(prompt, k=k)
         return results
+    
+    def save(self, path):
+        self.db.save_local(path)
+
+    def load(self, path):
+        self.db = FAISS.load_local(path, self.embedding, allow_dangerous_deserialization=True)
