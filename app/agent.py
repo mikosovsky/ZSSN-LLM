@@ -29,7 +29,6 @@ class Agent:
         self.vectorstore = VectorStore()
         self.server_params = self._init_server_params()
         self.memory = {}
-        self._init_agent_with_memory()
 
     # Initializes the chat model based on the provider.
     def _initialize_chat_model(self):
@@ -54,14 +53,10 @@ class Agent:
     def _init_prompt_template(self):
         prompt_template = ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(
-                "You are a financial advisor who always thinks step by step, then uses tools if needed, until reaching a final answer.\n\n"
-                "You can use the following context to help you:\n{context}\n\n"
-                "(repeat Thought/Action/Action Input/Observation if needed)\n"
-                "Final Answer: the final answer to the original question"
+                "You are a financial advisor."
                 ),
             MessagesPlaceholder(variable_name="chat_history"),
-            HumanMessagePromptTemplate.from_template("{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad")
+            HumanMessagePromptTemplate.from_template("{input}")
             ])
 
         return prompt_template
@@ -72,8 +67,28 @@ class Agent:
             command="python",
             args=["app/server.py"]
         )
+    
+    def invoke(self, prompt):
+        context = self._get_context(prompt)
+        context = ', '.join(context)
+        chain = self.prompt_template | self.chat_model
+        chain_with_history = RunnableWithMessageHistory(
+            chain,
+            self._get_session_history,
+            input_messages_key="input",
+            history_messages_key="chat_history"
+        )
+        response = chain_with_history.invoke({
+            "context": context,
+            "input": prompt
+        },
+        config={"configurable": {"session_id": "<foo>"}}
+        )
+        print(response)
+        return response.content
         
-    async def _init_agent_with_memory(self):
+        
+    async def init_agent_with_memory(self):
         async with stdio_client(self.server_params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
@@ -92,6 +107,7 @@ class Agent:
                     input_messages_key="input",
                     history_messages_key="chat_history"
                 )
+
             
     async def new_ainvoke(self, prompt):
         context = self._get_context(prompt)
@@ -103,7 +119,7 @@ class Agent:
         config={"configurable": {"session_id": "<foo>"}}
         )
         return response['output']
-
+            
     # Runs the agent with the given prompt.
     async def ainvoke(self, prompt):
         context = self._get_context(prompt)

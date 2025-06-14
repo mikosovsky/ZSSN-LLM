@@ -11,7 +11,6 @@ import nest_asyncio
 # This is used to ensure unique keys for each file download button
 file_button_counter = 0
 documents = []
-nest_asyncio.apply()  # Apply nest_asyncio to allow nested event loops
 
 def increment_counter():
     global file_button_counter
@@ -106,9 +105,11 @@ if prompt := st.chat_input("Start a conversation",
 
         
     # Simulate a response from a model (placeholder)
+    
     with st.spinner("Thinking..."):
+        
         with st.chat_message("assistant"):
-            ans = asyncio.run(st.session_state.agent.ainvoke(req_prompt))
+            ans = st.session_state.agent.invoke(req_prompt)
             if not ans:
                 ans = "There was no answer from the model, please try again."
             st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})
