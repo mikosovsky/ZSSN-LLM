@@ -61,6 +61,10 @@ with st.sidebar:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Initialize session state for chat context
+if "current_context_id" not in st.session_state:
+    st.session_state.current_context_id = None
+
 # Check if API key, endpoint url, model and provider are set, if not prompt user to set it
 if "API_KEY" not in st.session_state or "ENDPOINT_URL" not in st.session_state or "model" not in st.session_state or "provider" not in st.session_state:
     st.session_state.API_KEY = ""
@@ -99,6 +103,64 @@ if prompt := st.chat_input("Start a conversation",
             st.session_state.vectorstore.add_documents(docs)
         st.session_state.messages.append({"role": "user", "content": req_prompt, "files": files_dict})
 
+        
+    # Simulate a response from a model (placeholder)
+    with st.chat_message("assistant"):
+        ans = st.session_state.vectorstore.search(req_prompt, k=5)
+        if not ans:
+            ans = "No relevant information found in the provided documents."
+        else:
+            ans = "\n".join([doc.page_content for doc in ans])
+        st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})
+        st.markdown(ans)
+
+# Add new chat button in sidebar
+with st.sidebar:
+    if st.session_state.get("authentication_status"):
+        if st.button("New Chat"):
+            st.session_state.current_context_id = db.create_chat_context(st.session_state["username"])
+            st.session_state.messages = []
+            st.rerun()
+        
+        # Show chat contexts instead of individual messages
+        st.header("💬 Chat History")
+        contexts = db.get_chat_contexts(st.session_state["username"])
+        for context_id, name, created_at in contexts:
+            if st.button(f"📝 {name}"):
+                st.session_state.current_context_id = context_id
+                st.session_state.messages = db.get_context_messages(context_id)
+                st.rerun()
+
+# Update chat input handling
+if prompt := st.chat_input("Start a conversation",
+                           accept_file="multiple",
+                           file_type=["pdf", "csv", "txt"]):
+    # Store user input in session state
+    with st.chat_message("user"):
+        req_prompt = ""
+        files_btns = []
+        files_dict = []
+        if prompt.text:
+            req_prompt = prompt["text"]
+            st.markdown(req_prompt)
+        if prompt.files:
+            files_btns = [st.download_button(label=file.name, data=file, file_name=file.name, icon="📄", key=f"file_btn_{increment_counter()}") for file in prompt.files]
+            files_dict = [{"name": file.name, "data": file} for file in prompt.files]
+            docs = [file_to_doc(file) for file in prompt.files]
+            st.session_state.vectorstore.add_documents(docs)
+        st.session_state.messages.append({"role": "user", "content": req_prompt, "files": files_dict})
+
+        # Save to current context
+        if st.session_state.authentication_status:
+            if not st.session_state.current_context_id:
+                st.session_state.current_context_id = db.create_chat_context(st.session_state["username"])
+            
+            db.save_message(
+                st.session_state.current_context_id,
+                "user",
+                req_prompt,
+                files_dict if prompt.files else None
+            )
         
     # Simulate a response from a model (placeholder)
     with st.chat_message("assistant"):
