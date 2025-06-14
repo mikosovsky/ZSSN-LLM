@@ -29,6 +29,7 @@ class Agent:
         self.vectorstore = VectorStore()
         self.server_params = self._init_server_params()
         self.memory = {}
+        self._init_agent_with_memory()
 
     # Initializes the chat model based on the provider.
     def _initialize_chat_model(self):
@@ -72,6 +73,37 @@ class Agent:
             args=["app/server.py"]
         )
         
+    async def _init_agent_with_memory(self):
+        async with stdio_client(self.server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                tools = await load_mcp_tools(session)
+
+                agent = create_tool_calling_agent(self.chat_model, tools, self.prompt_template)
+
+                executor = AgentExecutor(
+                    agent=agent,
+                    tools=tools,
+                    verbose=True
+                )
+                self.agent_with_memory = RunnableWithMessageHistory(
+                    executor,
+                    self._get_session_history,
+                    input_messages_key="input",
+                    history_messages_key="chat_history"
+                )
+            
+    async def new_ainvoke(self, prompt):
+        context = self._get_context(prompt)
+        context = ', '.join(context)
+        response = await self.agent_with_memory.ainvoke({
+            "context": context,
+            "input": prompt
+        },
+        config={"configurable": {"session_id": "<foo>"}}
+        )
+        return response['output']
+
     # Runs the agent with the given prompt.
     async def ainvoke(self, prompt):
         context = self._get_context(prompt)
@@ -80,8 +112,6 @@ class Agent:
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = await load_mcp_tools(session)
-                print(f"Tools loaded: {tools}")
-                print(self.prompt_template.messages)
 
                 agent = create_tool_calling_agent(self.chat_model, tools, self.prompt_template)
 
@@ -96,15 +126,14 @@ class Agent:
                     input_messages_key="input",
                     history_messages_key="chat_history"
                 )
-                print(f"context type: {type(context)}")
-                print(f"input type: {type(prompt)}")
+
                 response = await agent_with_memory.ainvoke({
                     "context": context,
                     "input": prompt
                 },
                 config={"configurable": {"session_id": "<foo>"}}
                 )
-                return response
+                return response['output']
 
     def test_connection(self):
         try:
@@ -128,7 +157,7 @@ class Agent:
         return self.memory[session_id]
         
     # Adds documents to the vector store.
-    def _add_documents(self, documents):
+    def add_documents(self, documents):
         self.vectorstore.add_documents(documents)
 
     # Searches the vector store with a given prompt.

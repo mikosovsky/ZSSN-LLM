@@ -3,12 +3,15 @@ import pandas as pd
 from time import sleep
 import fitz
 from langchain.docstore.document import Document
-from agent import VectorStore
+from agent import Agent
+import asyncio
+import nest_asyncio
 
 # Function to increment the file button counter
 # This is used to ensure unique keys for each file download button
 file_button_counter = 0
 documents = []
+nest_asyncio.apply()  # Apply nest_asyncio to allow nested event loops
 
 def increment_counter():
     global file_button_counter
@@ -42,6 +45,12 @@ def set_api_key():
             st.session_state.model = models.get(provider)
             st.session_state.provider = provider
             st.success("Config set successfully!")
+            st.session_state.agent = Agent(
+                provider=st.session_state.provider,
+                endpoint_url=st.session_state.ENDPOINT_URL,
+                api_key=st.session_state.API_KEY,
+                model=st.session_state.model
+            )
             sleep(1)
             st.rerun()
         else:
@@ -69,10 +78,6 @@ if "API_KEY" not in st.session_state or "ENDPOINT_URL" not in st.session_state o
     st.session_state.provider = ""
     set_api_key()
 
-# Initiaize the VectorStore if not already done
-if "vectorstore" not in st.session_state:
-    st.session_state.vectorstore = VectorStore()
-
 # Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -96,16 +101,15 @@ if prompt := st.chat_input("Start a conversation",
             files_btns = [st.download_button(label=file.name, data=file, file_name=file.name, icon="📄", key=f"file_btn_{increment_counter()}") for file in prompt.files]
             files_dict = [{"name": file.name, "data": file} for file in prompt.files]
             docs = [file_to_doc(file) for file in prompt.files]
-            st.session_state.vectorstore.add_documents(docs)
+            st.session_state.agent.add_documents(docs)
         st.session_state.messages.append({"role": "user", "content": req_prompt, "files": files_dict})
 
         
     # Simulate a response from a model (placeholder)
-    with st.chat_message("assistant"):
-        ans = st.session_state.vectorstore.search(req_prompt, k=5)
-        if not ans:
-            ans = "No relevant information found in the provided documents."
-        else:
-            ans = "\n".join([doc.page_content for doc in ans])
-        st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})
-        st.markdown(ans)
+    with st.spinner("Thinking..."):
+        with st.chat_message("assistant"):
+            ans = asyncio.run(st.session_state.agent.ainvoke(req_prompt))
+            if not ans:
+                ans = "There was no answer from the model, please try again."
+            st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})
+            st.markdown(ans)

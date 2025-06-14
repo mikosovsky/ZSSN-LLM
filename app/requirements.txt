@@ -17,3 +17,4 @@ numpy<2
 yfinance
 langchain-mcp-adapters
 langgraph
+nest_asyncio
