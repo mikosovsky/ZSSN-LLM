@@ -12,6 +12,25 @@ import nest_asyncio
 file_button_counter = 0
 documents = []
 nest_asyncio.apply()  # Apply nest_asyncio to allow nested event loops
+async def foo():
+    asyncio.sleep(2)
+    return "habla habla hyc"
+
+def run_async_in_event_loop(coro):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        print("except done")
+        print("===========LOOP IS RUNNING?================")
+        print(loop.is_running())
+        print(loop.is_closed())
+        return loop.run_until_complete(coro)
+    
+    print("try done")
+    future = asyncio.run_coroutine_threadsafe(coro, loop)
+    return future.result()
 
 def increment_counter():
     global file_button_counter
@@ -108,7 +127,8 @@ if prompt := st.chat_input("Start a conversation",
     # Simulate a response from a model (placeholder)
     with st.spinner("Thinking..."):
         with st.chat_message("assistant"):
-            ans = asyncio.run(st.session_state.agent.ainvoke(req_prompt))
+            ans = run_async_in_event_loop(st.session_state.agent.ainvoke(req_prompt))
+            # ans = run_async_in_event_loop(foo())
             if not ans:
                 ans = "There was no answer from the model, please try again."
             st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})

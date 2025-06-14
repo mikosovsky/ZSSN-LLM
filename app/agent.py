@@ -29,7 +29,6 @@ class Agent:
         self.vectorstore = VectorStore()
         self.server_params = self._init_server_params()
         self.memory = {}
-        self._init_agent_with_memory()
 
     # Initializes the chat model based on the provider.
     def _initialize_chat_model(self):
@@ -48,7 +47,7 @@ class Agent:
         self.endpoint_url = endpoint_url
         self.api_key = api_key
         self.model = model
-        self.chat_model = self._initialize_chat_model()
+        # self.chat_model = self._initialize_chat_model()
         
     # Initializes the prompt template for the agent.
     def _init_prompt_template(self):
@@ -72,48 +71,19 @@ class Agent:
             command="python",
             args=["app/server.py"]
         )
-        
-    async def _init_agent_with_memory(self):
-        async with stdio_client(self.server_params) as (read, write):
-            async with ClientSession(read, write) as session:
-                await session.initialize()
-                tools = await load_mcp_tools(session)
-
-                agent = create_tool_calling_agent(self.chat_model, tools, self.prompt_template)
-
-                executor = AgentExecutor(
-                    agent=agent,
-                    tools=tools,
-                    verbose=True
-                )
-                self.agent_with_memory = RunnableWithMessageHistory(
-                    executor,
-                    self._get_session_history,
-                    input_messages_key="input",
-                    history_messages_key="chat_history"
-                )
-            
-    async def new_ainvoke(self, prompt):
-        context = self._get_context(prompt)
-        context = ', '.join(context)
-        response = await self.agent_with_memory.ainvoke({
-            "context": context,
-            "input": prompt
-        },
-        config={"configurable": {"session_id": "<foo>"}}
-        )
-        return response['output']
 
     # Runs the agent with the given prompt.
     async def ainvoke(self, prompt):
+        chat_model = self._initialize_chat_model()
         context = self._get_context(prompt)
         context = ', '.join(context)
+        response = None
         async with stdio_client(self.server_params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = await load_mcp_tools(session)
 
-                agent = create_tool_calling_agent(self.chat_model, tools, self.prompt_template)
+                agent = create_tool_calling_agent(chat_model, tools, self.prompt_template)
 
                 executor = AgentExecutor(
                     agent=agent,
@@ -133,23 +103,8 @@ class Agent:
                 },
                 config={"configurable": {"session_id": "<foo>"}}
                 )
-                return response['output']
-
-    def test_connection(self):
-        try:
-            # Attempt to get a response from the model
-            response = self.chat_model.invoke(
-                [SystemMessage(content="Answer by one sentence."),
-                 HumanMessage(content="Hello, world!")],
-                config={
-                    "generation_config": {
-                        "max_tokens": 10
-                    }
-                }
-            )
-            return True, response.content
-        except Exception as e:
-            return False, str(e)
+        del chat_model
+        return response['output']
         
     def _get_session_history(self, session_id):
         if session_id not in self.memory:
