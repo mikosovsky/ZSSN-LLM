@@ -7,14 +7,11 @@ from agent import Agent
 import asyncio
 import nest_asyncio
 
-# Function to increment the file button counter
+
 # This is used to ensure unique keys for each file download button
 file_button_counter = 0
 documents = []
 nest_asyncio.apply()  # Apply nest_asyncio to allow nested event loops
-async def foo():
-    asyncio.sleep(2)
-    return "habla habla hyc"
 
 def run_async_in_event_loop(coro):
     try:
@@ -22,16 +19,12 @@ def run_async_in_event_loop(coro):
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        print("except done")
-        print("===========LOOP IS RUNNING?================")
-        print(loop.is_running())
-        print(loop.is_closed())
         return loop.run_until_complete(coro)
     
-    print("try done")
     future = asyncio.run_coroutine_threadsafe(coro, loop)
     return future.result()
 
+# Function to increment the file button counter
 def increment_counter():
     global file_button_counter
     return_value = file_button_counter
@@ -49,12 +42,12 @@ def file_to_doc(file):
         return Document(page_content=text, metadata={"source": file.name})
 
 # Dialog to set provider, endpoint URL, and API key
-providers = {"OpenRouter":0, "Azure AI Foundry":1}
-models = { "OpenRouter": "deepseek/deepseek-r1-0528:free", "Azure AI Foundry": "DeepSeek-V3-0324" }
+providers = {"Azure AI Foundry":0}
+models = {"Azure AI Foundry": "DeepSeek-V3-0324" }
 @st.dialog("Set config for LLM")
 def set_api_key():
     st.markdown("Please select provider and model additionally please set your endpoint URL and API Key.")
-    provider = st.selectbox("Select Provider", ["OpenRouter", "Azure AI Foundry"], index=providers.get(st.session_state.get("provider", "OpenRouter"), 0))
+    provider = st.selectbox("Select Provider", ["Azure AI Foundry"], index=providers.get(st.session_state.get("provider", "Azure AI Foundry"), 0))
     endpoint_url = st.text_input("Endpoint URL", value=st.session_state.ENDPOINT_URL, placeholder="Enter endpoint URL")
     api_key = st.text_input("API Key", value=st.session_state.API_KEY, placeholder="Enter API key", type="password")
     if st.button("Submit"):
@@ -128,7 +121,6 @@ if prompt := st.chat_input("Start a conversation",
     with st.spinner("Thinking..."):
         with st.chat_message("assistant"):
             ans = run_async_in_event_loop(st.session_state.agent.ainvoke(req_prompt))
-            # ans = run_async_in_event_loop(foo())
             if not ans:
                 ans = "There was no answer from the model, please try again."
             st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})

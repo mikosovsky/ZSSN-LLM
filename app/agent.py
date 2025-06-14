@@ -1,10 +1,8 @@
 from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 from azure.core.credentials import AzureKeyCredential
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain.prompts import PromptTemplate, ChatPromptTemplate, MessagesPlaceholder
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.prompts.chat import SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.memory import ConversationBufferMemory
 from langchain.vectorstores import FAISS
 from langchain.docstore.document import Document
 from langchain.text_splitter import CharacterTextSplitter
@@ -12,15 +10,9 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langchain.agents import AgentExecutor
-from langgraph.prebuilt import create_react_agent
 from langchain.agents import create_tool_calling_agent
-from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
-import asyncio
-
-PROVIDERS = {"OpenRouter":0, "Azure AI Foundry":1}
-MODELS = { "OpenRouter": "deepseek/deepseek-r1-0528:free", "Azure AI Foundry": "DeepSeek-R1-0528" }
 
 class Agent:
     def __init__(self, provider, endpoint_url, api_key, model):
@@ -29,6 +21,7 @@ class Agent:
         self.vectorstore = VectorStore()
         self.server_params = self._init_server_params()
         self.memory = {}
+        self.vectorstore.load("resources/vectorstore")
 
     # Initializes the chat model based on the provider.
     def _initialize_chat_model(self):
@@ -47,7 +40,6 @@ class Agent:
         self.endpoint_url = endpoint_url
         self.api_key = api_key
         self.model = model
-        # self.chat_model = self._initialize_chat_model()
         
     # Initializes the prompt template for the agent.
     def _init_prompt_template(self):
@@ -76,7 +68,7 @@ class Agent:
     async def ainvoke(self, prompt):
         chat_model = self._initialize_chat_model()
         context = self._get_context(prompt)
-        context = ', '.join(context)
+        context = ', '.join([doc.page_content for doc in context])
         response = None
         async with stdio_client(self.server_params) as (read, write):
             async with ClientSession(read, write) as session:
@@ -106,6 +98,7 @@ class Agent:
         del chat_model
         return response['output']
         
+    # Provide chat history to model
     def _get_session_history(self, session_id):
         if session_id not in self.memory:
             self.memory[session_id] = ChatMessageHistory()
@@ -137,3 +130,9 @@ class VectorStore:
     def search(self, prompt, k=5):
         results = self.db.similarity_search(prompt, k=k)
         return results
+    
+    def save(self, path):
+        self.db.save_local(path)
+
+    def load(self, path):
+        self.db = FAISS.load_local(path, self.embedding, allow_dangerous_deserialization=True)
