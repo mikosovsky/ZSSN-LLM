@@ -14,7 +14,7 @@
 - [ ] funkcja MCP dla plotly
 - [ ] funkcja MCP dla generowania raportów pdf
 - [ ] dodanie cache'a
-- [ ] historia chatów - baza SQLite (logowanie?)
+- [x] historia chatów
 - [x] UI - chat + sidebar
 
 # Workflow:
