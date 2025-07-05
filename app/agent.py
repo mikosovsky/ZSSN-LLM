@@ -1,4 +1,5 @@
 from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
+from langchain_openai import ChatOpenAI
 from azure.core.credentials import AzureKeyCredential
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.prompts.chat import SystemMessagePromptTemplate, HumanMessagePromptTemplate
@@ -31,6 +32,13 @@ class Agent:
                 credential=AzureKeyCredential(self.api_key),
                 model=self.model
             )
+        elif self.provider == "OpenRouter":
+            print(self.endpoint_url, self.api_key, self.model)
+            return ChatOpenAI(
+                openai_api_base=self.endpoint_url,
+                openai_api_key=self.api_key,
+                model_name=self.model
+            ) 
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
         
