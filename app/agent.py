@@ -37,7 +37,8 @@ class Agent:
             return ChatOpenAI(
                 openai_api_base=self.endpoint_url,
                 openai_api_key=self.api_key,
-                model_name=self.model
+                model_name=self.model,
+                max_tokens=2048
             ) 
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
