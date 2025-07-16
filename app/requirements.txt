@@ -18,3 +18,5 @@ yfinance
 langchain-mcp-adapters
 langgraph
 nest_asyncio
+matplotlib
+mplfinance

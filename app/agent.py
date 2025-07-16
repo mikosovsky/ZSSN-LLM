@@ -27,6 +27,7 @@ class Agent:
     # Initializes the chat model based on the provider.
     def _initialize_chat_model(self):
         if self.provider == "Azure AI Foundry":
+            print("Azure AI Foundry selected")
             return AzureAIChatCompletionsModel(
                 endpoint=self.endpoint_url,
                 credential=AzureKeyCredential(self.api_key),
@@ -91,12 +92,14 @@ class Agent:
                     tools=tools,
                     verbose=True
                 )
+                print("Executor initialized")
                 agent_with_memory = RunnableWithMessageHistory(
                     executor,
                     self._get_session_history,
                     input_messages_key="input",
                     history_messages_key="chat_history"
                 )
+                print("Agent with memory initialized")
 
                 response = await agent_with_memory.ainvoke({
                     "context": context,

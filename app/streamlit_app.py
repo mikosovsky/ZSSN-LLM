@@ -127,4 +127,4 @@ if prompt := st.chat_input("Start a conversation",
             if not ans:
                 ans = "There was no answer from the model, please try again."
             st.session_state.messages.append({"role": "assistant", "content": ans, "files": []})
-            st.markdown(ans)
+            st.markdown(ans, unsafe_allow_html=True)
