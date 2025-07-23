@@ -27,14 +27,12 @@ class Agent:
     # Initializes the chat model based on the provider.
     def _initialize_chat_model(self):
         if self.provider == "Azure AI Foundry":
-            print("Azure AI Foundry selected")
             return AzureAIChatCompletionsModel(
                 endpoint=self.endpoint_url,
                 credential=AzureKeyCredential(self.api_key),
                 model=self.model
             )
         elif self.provider == "OpenRouter":
-            print(self.endpoint_url, self.api_key, self.model)
             return ChatOpenAI(
                 openai_api_base=self.endpoint_url,
                 openai_api_key=self.api_key,
@@ -77,7 +75,6 @@ class Agent:
     async def ainvoke(self, prompt):
         chat_model = self._initialize_chat_model()
         context = self._get_context(prompt)
-        print(f"Context: \n{context}")
         context = ', '.join([doc.page_content for doc in context])
         response = None
         async with stdio_client(self.server_params) as (read, write):
@@ -92,14 +89,12 @@ class Agent:
                     tools=tools,
                     verbose=True
                 )
-                print("Executor initialized")
                 agent_with_memory = RunnableWithMessageHistory(
                     executor,
                     self._get_session_history,
                     input_messages_key="input",
                     history_messages_key="chat_history"
                 )
-                print("Agent with memory initialized")
 
                 response = await agent_with_memory.ainvoke({
                     "context": context,
