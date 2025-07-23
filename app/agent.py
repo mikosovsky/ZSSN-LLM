@@ -38,8 +38,7 @@ class Agent:
             return ChatOpenAI(
                 openai_api_base=self.endpoint_url,
                 openai_api_key=self.api_key,
-                model_name=self.model,
-                max_tokens=2048
+                model_name=self.model
             ) 
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
@@ -78,6 +77,7 @@ class Agent:
     async def ainvoke(self, prompt):
         chat_model = self._initialize_chat_model()
         context = self._get_context(prompt)
+        print(f"Context: \n{context}")
         context = ', '.join([doc.page_content for doc in context])
         response = None
         async with stdio_client(self.server_params) as (read, write):
@@ -121,7 +121,7 @@ class Agent:
         self.vectorstore.add_documents(documents)
 
     # Searches the vector store with a given prompt.
-    def _get_context(self, prompt, k=5):
+    def _get_context(self, prompt, k=2):
         return self.vectorstore.search(prompt, k=k)
 
 class VectorStore:
@@ -133,9 +133,9 @@ class VectorStore:
         self.db.docstore._dict.clear()
         self.db.index_to_docstore_id.clear()
 
-    def add_documents(self, documents):
+    def add_documents(self, documents, chunk_size=1000, chunk_overlap=200, separator="\n"):
         docs = []
-        text_spliter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200, separator="\n")
+        text_spliter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap, separator=separator)
         docs = text_spliter.split_documents(documents)
         self.db.add_documents(docs)
 

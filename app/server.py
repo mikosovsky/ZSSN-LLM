@@ -144,39 +144,36 @@ def get_stock_news(ticker: str) -> list:
     news = stock.news
     return news
 
-# @mcp.tool()
-# def plot_stock_price(ticker: str, period: str, interval: str) -> str:
-#     """
-#     Plot the stock price for a given ticker symbol.
+@mcp.tool()
+def plot_stock_price(ticker: str, period: str, interval: str) -> str:
+    """
+    Plot the stock price for a given ticker symbol.
 
-#     Args:
-#         ticker (str): The stock ticker symbol (e.g., 'AAPL' for Apple Inc.).
-#         period (str): The period for which to retrieve historical data e.g. ['1d', '1wk', '1mo', '1y].
-#         interval (str): The interval for the historical data e.g. ['1m', '5m', '1h', '1d', '1wk', '1mo'].
+    Args:
+        chart_num (int): The chart number to identify the plot.
+        ticker (str): The stock ticker symbol (e.g., 'AAPL' for Apple Inc.).
+        period (str): The period for which to retrieve historical data e.g. ['1d', '1wk', '1mo', '1y].
+        interval (str): The interval for the historical data e.g. ['1m', '5m', '1h', '1d', '1wk', '1mo'].
 
-#     Returns:
-#         str: Ready string with encoded image of plot to add to the response.
-#     """
-#     stock = yf.Ticker(ticker)
-#     stock_history = stock.history(period=period, interval=interval)
+    Returns:
+        str: Ready string with encoded image of plot to add to the response.
+    """
+    stock = yf.Ticker(ticker)
+    stock_history = stock.history(period=period, interval=interval)
 
-#     fig, ax = mpf.plot(
-#     stock_history,
-#     type='candle',
-#     style='yahoo',
-#     title=f'{ticker} Stock Price',
-#     ylabel='Price ($)',
-#     volume=True,
-#     returnfig=True
-#     )
-
-#     buf = io.BytesIO()
-#     plt.savefig(buf, format='png')
-#     buf.seek(0)
-#     b64 = base64.b64encode(buf.read()).decode('utf-8')
-#     img_src = f"data:image/png;base64,{b64}"
-#     str_plot = f'<img src="{img_src}" alt="AAPL Stock Price" style="width:100%;height:auto;">'
-#     return str_plot
+    fig, ax = mpf.plot(
+    stock_history,
+    type='candle',
+    style='yahoo',
+    title=f'{ticker} Stock Price',
+    ylabel='Price ($)',
+    volume=True,
+    returnfig=True
+    )
+    chart_name = f"app/static/chart_{ticker}_{period}_{interval}.png"
+    plt.savefig(chart_name, format='png')
+    str_plot = f'![{ticker} Stock Price]({chart_name})'
+    return str_plot
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
