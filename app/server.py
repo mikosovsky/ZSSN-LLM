@@ -2,8 +2,6 @@ from mcp.server.fastmcp import FastMCP
 import yfinance as yf
 import matplotlib.pyplot as plt
 import mplfinance as mpf
-import io
-import base64
 
 mcp = FastMCP("Finance")
 
