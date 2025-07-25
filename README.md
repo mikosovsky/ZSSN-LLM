@@ -88,6 +88,15 @@ store.save("resources/vectorstore")
 
 While the application is running, new documents added by users are saved in memory; you can persist them to disk using `store.save()` in helper scripts.
 
+## LLM model used
+
+The application uses the **DeepSeek V3 0324** large language model for all natural language processing tasks. This model must be accessible via one of the supported providers:
+
+* **Azure AI Foundry** or
+* **OpenRouter** (free version is selected by default).
+
+The model is selected and configured by the user during initial setup through the Streamlit sidebar, where the endpoint URL and API key are provided. Only DeepSeek V3 0324 is supported in the current implementation.
+
 ## License
 
 The project is released under the MIT license.  You can find the full text in the [`LICENSE`](LICENSE) file.
